@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
-import { sendUSDC, deriveAddressFromPrivateKey, checkEIP7702Delegation, createCalldataArray, packCalldataArray, createExecuteCalldata, sendExecuteTransaction, sendEIP7702Transaction } from './usdc';
+import { sendUSDC, deriveAddressFromPrivateKey, checkEIP7702Delegation, createCalldataArray, packCalldataArray, createExecuteCalldata, sendExecuteTransaction, sendEIP7702Transaction, getNetworkConfig } from './usdc';
 import { validateAddress, validateAmount, validatePaymentId } from './utils';
 
 // Load environment variables
@@ -20,7 +20,7 @@ program
   .argument('<amount>', 'Amount of USDC to send')
   .argument('<recipient>', 'Recipient wallet address')
   .argument('<paymentId>', 'Payment ID (string)')
-  .option('-n, --network <network>', 'Network to use (ethereum, arbitrum, avalanche, base, celo, linea, optimism, polygon, unichain, worldchain)', 'ethereum')
+  .option('-n, --network <network>', 'Network to use (ethereum, arbitrum, avalanche, base, celo, linea, optimism, polygon, unichain, worldchain, zircuit)', 'ethereum')
   .option('-d, --dry-run', 'Perform a dry run without sending the transaction')
   .action(async (amount: string, recipient: string, paymentId: string, options) => {
     try {
@@ -36,14 +36,19 @@ program
       console.log(chalk.cyan(`Payment ID: ${validPaymentId}`));
       console.log(chalk.cyan(`Network: ${options.network}`));
 
-      // Check environment variables
-      const rpcUrl = process.env.RPC_URL;
+      // Get network configuration (with environment variable overrides)
+      const networkConfig = getNetworkConfig(options.network);
+      const rpcUrl = process.env.RPC_URL || networkConfig.rpcUrl;
       const privateKey = process.env.PRIVATE_KEY;
-      const delegatorAddress = process.env.DELEGATOR_ADDRESS;
-      const eventorAddress = process.env.EVENTOR_ADDRESS;
+      const delegatorAddress = process.env.DELEGATOR_ADDRESS || networkConfig.delegatorAddress;
+      const eventorAddress = process.env.EVENTOR_ADDRESS || networkConfig.eventorAddress;
 
-      if (!rpcUrl || !privateKey || !delegatorAddress || !eventorAddress) {
-        throw new Error('Missing required environment variables: RPC_URL, PRIVATE_KEY, DELEGATOR_ADDRESS, and EVENTOR_ADDRESS');
+      console.log(chalk.gray(`📡 RPC URL: ${rpcUrl} ${process.env.RPC_URL ? '(from env)' : '(from network config)'}`));
+      console.log(chalk.gray(`🎯 Delegator: ${delegatorAddress} ${process.env.DELEGATOR_ADDRESS ? '(from env)' : '(from network config)'}`));
+      console.log(chalk.gray(`📋 Eventor: ${eventorAddress} ${process.env.EVENTOR_ADDRESS ? '(from env)' : '(from network config)'}`));
+
+      if (!privateKey) {
+        throw new Error('Missing required environment variable: PRIVATE_KEY');
       }
 
       // Derive address from private key and check for EIP-7702 delegation
@@ -76,11 +81,17 @@ program
 
       // Create calldata array
       console.log(chalk.blue('\n📦 Creating calldata array...'));
+
+      // Get and display the USDC address for this network
+      const usdcAddress = networkConfig.usdcAddress;
+      console.log(chalk.gray(`💰 USDC Address for ${options.network}: ${usdcAddress}`));
+
       const calldataArray = createCalldataArray(eventorAddress, validRecipient, validAmount, validPaymentId, options.network);
 
       console.log(chalk.cyan('Calldata Array:'));
       calldataArray.forEach((item, index) => {
-        console.log(chalk.cyan(`  [${index}]: (${item[0]}, ${item[1]}, ${item[2]})`));
+        const label = index === 0 ? 'Eventor Commit' : index === 1 ? 'USDC Transfer' : 'Eventor Reveal';
+        console.log(chalk.cyan(`  [${index}] ${label}: (${item[0]}, ${item[1]}, ${item[2].substring(0, 10)}...)`));
       });
 
       // Pack the array into bytes

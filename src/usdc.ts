@@ -1,6 +1,50 @@
 import { createPublicClient, http, isAddress, encodeFunctionData, parseUnits, getAddress, encodeAbiParameters, createWalletClient, keccak256, toHex } from 'viem';
 import { privateKeyToAddress, privateKeyToAccount } from 'viem/accounts';
 import { mainnet, arbitrum, avalanche, base, celo, linea, optimism, polygon } from 'viem/chains';
+import { defineChain } from 'viem';
+
+// Define custom chains not available in viem/chains
+const zircuit = defineChain({
+  id: 48900,
+  name: 'Zircuit Mainnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://mainnet.zircuit.com'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Zircuit Explorer',
+      url: 'https://explorer.zircuit.com',
+    },
+  },
+});
+
+const worldchain = defineChain({
+  id: 480,
+  name: 'World Chain',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://worldchain-mainnet.g.alchemy.com/public'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'World Chain Explorer',
+      url: 'https://worldchain-mainnet.explorer.alchemy.com',
+    },
+  },
+});
 
 // Chain configurations
 const CHAIN_CONFIG = {
@@ -13,11 +57,12 @@ const CHAIN_CONFIG = {
   linea: linea,
   optimism: optimism,
   polygon: polygon,
-  // Note: unichain, worldchain, codex might not be available in viem/chains
+  // Note: unichain, codex might not be available in viem/chains
   // We'll use mainnet as fallback for now
   unichain: mainnet,
-  worldchain: mainnet,
+  worldchain: worldchain,
   codex: mainnet,
+  zircuit: zircuit,
 };
 
 // ABI for the commit function
@@ -62,6 +107,23 @@ const ERC20_TRANSFER_ABI = [{
   ]
 }] as const;
 
+// RPC URLs for different networks
+const RPC_URLS = {
+  ethereum: 'https://eth.llamarpc.com',
+  mainnet: 'https://eth.llamarpc.com', // Ethereum mainnet alias
+  arbitrum: 'https://arb1.arbitrum.io/rpc',
+  avalanche: 'https://api.avax.network/ext/bc/C/rpc',
+  base: 'https://mainnet.base.org',
+  codex: 'https://rpc.codex.technology',
+  celo: 'https://forno.celo.org',
+  linea: 'https://rpc.linea.build',
+  optimism: 'https://mainnet.optimism.io',
+  polygon: 'https://polygon-rpc.com',
+  unichain: 'https://rpc.unichain.org',
+  worldchain: 'https://worldchain-mainnet.g.alchemy.com/public',
+  zircuit: 'https://mainnet.zircuit.com',
+};
+
 // USDC contract addresses for different networks
 const USDC_ADDRESSES = {
   ethereum: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // Ethereum mainnet USDC
@@ -75,7 +137,42 @@ const USDC_ADDRESSES = {
   optimism: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', // OP Mainnet USDC
   polygon: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // Polygon PoS USDC
   unichain: '0x078D782b760474a361dDA0AF3839290b0EF57AD6', // Unichain USDC
-  worldchain: '0x79A02482A880bCe3F13E09da970dC34dB4cD24D1', // World Chain USDC
+  worldchain: '0x79A02482A880bCE3F13e09Da970dC34db4CD24d1', // World Chain USDC
+  zircuit: '0x3b952c8C9C44e8Fe201e2b26F6B2200203214cfF', // Zircuit USDC
+};
+
+// Delegator addresses for different networks (EIP-7702 delegation targets)
+const DELEGATOR_ADDRESSES = {
+  ethereum: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
+  mainnet: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496', // Ethereum mainnet alias
+  arbitrum: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
+  avalanche: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
+  base: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
+  codex: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
+  celo: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
+  linea: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
+  optimism: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
+  polygon: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
+  unichain: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
+  worldchain: '0x3CAFF4B47aBA17E9576aD928Fa8f978ad9777269',
+  zircuit: '0x3CAFF4B47aBA17E9576aD928Fa8f978ad9777269',
+};
+
+// Eventor addresses for different networks (commit/reveal contract)
+const EVENTOR_ADDRESSES = {
+  ethereum: '0x2BfC586A555bFd792b9a8b0936277b515CF45773',
+  mainnet: '0x2BfC586A555bFd792b9a8b0936277b515CF45773', // Ethereum mainnet alias
+  arbitrum: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
+  avalanche: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
+  base: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
+  codex: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
+  celo: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
+  linea: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
+  optimism: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
+  polygon: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
+  unichain: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
+  worldchain: '0x04fd13aED1B64639CCcCeeF1492741835ADCc15F',
+  zircuit: '0x04fd13aED1B64639CCcCeeF1492741835ADCc15F',
 };
 
 export interface SendUSDCParams {
@@ -118,6 +215,44 @@ export function getUSDCAddress(network: string): string {
     throw new Error(`Unsupported network: ${network}`);
   }
   return usdcAddress;
+}
+
+export function getRpcUrl(network: string): string {
+  const rpcUrl = RPC_URLS[network as keyof typeof RPC_URLS];
+  if (!rpcUrl) {
+    throw new Error(`Unsupported network: ${network}. Supported networks: ${Object.keys(RPC_URLS).join(', ')}`);
+  }
+  return rpcUrl;
+}
+
+export function getDelegatorAddress(network: string): string {
+  const delegatorAddress = DELEGATOR_ADDRESSES[network as keyof typeof DELEGATOR_ADDRESSES];
+  if (!delegatorAddress) {
+    throw new Error(`Unsupported network: ${network}. Supported networks: ${Object.keys(DELEGATOR_ADDRESSES).join(', ')}`);
+  }
+  return delegatorAddress;
+}
+
+export function getEventorAddress(network: string): string {
+  const eventorAddress = EVENTOR_ADDRESSES[network as keyof typeof EVENTOR_ADDRESSES];
+  if (!eventorAddress) {
+    throw new Error(`Unsupported network: ${network}. Supported networks: ${Object.keys(EVENTOR_ADDRESSES).join(', ')}`);
+  }
+  return eventorAddress;
+}
+
+export function getNetworkConfig(network: string): {
+  rpcUrl: string;
+  usdcAddress: string;
+  delegatorAddress: string;
+  eventorAddress: string;
+} {
+  return {
+    rpcUrl: getRpcUrl(network),
+    usdcAddress: getUSDCAddress(network),
+    delegatorAddress: getDelegatorAddress(network),
+    eventorAddress: getEventorAddress(network),
+  };
 }
 
 /**
@@ -212,7 +347,7 @@ export function createCalldataArray(eventorAddress: string, to: string, usdcValu
 export function packCalldataArray(calldataArray: Array<[string, string, string]>): string {
   // Transform the array to proper types for encoding
   const tuples = calldataArray.map(([address, value, data]) => ({
-    target: address as `0x${string}`,
+    target: getAddress(address), // Ensure proper checksum formatting
     value: BigInt(value),
     data: data as `0x${string}`
   }));
@@ -447,37 +582,17 @@ export async function sendEIP7702Transaction(
       transport: http(rpcUrl),
     });
 
-    // Get gas price
-    const gasPrice = await publicClient.getGasPrice();
+    // Send EIP-7702 transaction 
+    const txHash = await walletClient.sendTransaction({
+      to: account.address,
+      value: BigInt(0),
+      data: executeCalldata as `0x${string}`,
+      gas: BigInt(500000),
+      type: 'eip7702',
+      authorizationList: [authorization],
+    });
 
-    // Try to send EIP-7702 transaction with proper type
-    // Since viem might not fully support EIP-7702 yet, we need to be careful
-    try {
-      const txHash = await walletClient.sendTransaction({
-        to: account.address,
-        value: BigInt(0),
-        data: executeCalldata as `0x${string}`,
-        gas: BigInt(500000),
-        type: 'eip7702',
-        authorizationList: [authorization],
-      } as any);
-
-      return txHash;
-    } catch (error) {
-      console.log('EIP-7702 transaction failed, trying with custom type...');
-
-      // Fallback: try with custom transaction construction
-      const txHash = await walletClient.sendTransaction({
-        to: account.address,
-        value: BigInt(0),
-        data: executeCalldata as `0x${string}`,
-        gas: BigInt(500000),
-        type: '0x4' as any,
-        authorizationList: [authorization],
-      } as any);
-
-      return txHash;
-    }
+    return txHash;
   } catch (error) {
     console.error('Error sending EIP-7702 transaction:', error);
     throw error;

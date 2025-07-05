@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "BeamPay",
+  "version": "1.0.0",
+  "description": "EIP-7702 USDC delegation and payment tool",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "BeamPay"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  }
+} 

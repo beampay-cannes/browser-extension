@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeamPay dApp Integration Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            color: #4CAF50;
+        }
+        .error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: #f44336;
+        }
+        .info {
+            background: rgba(33, 150, 243, 0.2);
+            border: 1px solid rgba(33, 150, 243, 0.5);
+            color: #2196F3;
+        }
+        button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        input, select {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            margin: 5px;
+            width: 200px;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ BeamPay dApp Integration Example</h1>
+        <p>This example shows how to integrate BeamPay into your dApp for USDC payments.</p>
+
+        <div id="status" class="status info">
+            Waiting for BeamPay extension...
+        </div>
+
+        <div class="form-group">
+            <label for="chain">Network:</label>
+            <select id="chain">
+                <option value="ethereum">Ethereum</option>
+                <option value="zircuit">Zircuit</option>
+                <option value="flow">Flow</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="amount">Amount (USDC):</label>
+            <input type="number" id="amount" value="1" min="0.000001" step="0.000001">
+        </div>
+
+        <div class="form-group">
+            <label for="to">Recipient Address:</label>
+            <input type="text" id="to" value="0xD270c4804bcA681a5C915b18Ce86D0CD0e800CC7" placeholder="0x...">
+        </div>
+
+        <div class="form-group">
+            <label for="paymentId">Payment ID:</label>
+            <input type="text" id="paymentId" value="dapp-demo-" placeholder="Unique payment identifier">
+        </div>
+
+        <button onclick="sendPayment()" id="sendBtn" disabled>Send USDC Payment</button>
+        <button onclick="checkBeamPay()">Check BeamPay Status</button>
+        <button onclick="getSupportedNetworks()">Get Supported Networks</button>
+
+        <h3>Code Example:</h3>
+        <pre><code>// Basic usage
+try {
+  const result = await window.beampay.sendPayment({
+    chain: 'ethereum',      // Network: ethereum, zircuit, flow
+    amount: '10.5',         // USDC amount as string
+    to: '0x742d35Cc...',   // Recipient address
+    paymentId: 'order_123' // Unique payment identifier
+  });
+  
+  console.log('Payment successful!', result);
+  // result = { success: true, txHash: '0x...', network: 'Ethereum', method: 'EIP-7702 delegation' }
+} catch (error) {
+  console.error('Payment failed:', error.message);
+}
+
+// Check if BeamPay is available
+if (window.beampay && window.beampay.isAvailable()) {
+  console.log('BeamPay is ready!');
+  console.log('Supported networks:', window.beampay.getSupportedNetworks());
+}
+
+// Listen for BeamPay ready event
+window.addEventListener('beampay-ready', () => {
+  console.log('BeamPay API is now available!');
+});
+</code></pre>
+
+        <h3>Integration Steps:</h3>
+        <ol>
+            <li>Install the BeamPay Chrome extension</li>
+            <li>The extension automatically injects <code>window.beampay</code> into all web pages</li>
+            <li>Listen for the <code>beampay-ready</code> event or check <code>window.beampay</code></li>
+            <li>Call <code>window.beampay.sendPayment()</code> with required parameters</li>
+            <li>Handle the promise response or catch errors</li>
+        </ol>
+
+        <h3>API Reference:</h3>
+        <pre><code>window.beampay = {
+  // Send a USDC payment
+  async sendPayment({ chain, amount, to, paymentId }): Promise&lt;PaymentResult&gt;
+  
+  // Check if BeamPay is available
+  isAvailable(): boolean
+  
+  // Get supported networks
+  getSupportedNetworks(): string[]
+}
+
+// Types
+interface PaymentParams {
+  chain: 'ethereum' | 'zircuit' | 'flow';
+  amount: string;           // USDC amount as string
+  to: string;              // Recipient address (0x...)
+  paymentId: string;       // Unique payment identifier
+}
+
+interface PaymentResult {
+  success: true;
+  txHash: string;          // Transaction hash
+  network: string;         // Network name
+  method: string;          // Transaction method
+}
+</code></pre>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let beamPayReady = false;
+
+        // Listen for BeamPay ready event
+        window.addEventListener('beampay-ready', () => {
+            beamPayReady = true;
+            document.getElementById('status').innerHTML = '✅ BeamPay extension detected and ready!';
+            document.getElementById('status').className = 'status success';
+            document.getElementById('sendBtn').disabled = false;
+            
+            // Auto-generate payment ID
+            document.getElementById('paymentId').value = 'dapp-demo-' + Date.now();
+        });
+
+        // Check if BeamPay is already available
+        setTimeout(() => {
+            if (window.beampay && window.beampay.isAvailable()) {
+                beamPayReady = true;
+                document.getElementById('status').innerHTML = '✅ BeamPay extension detected and ready!';
+                document.getElementById('status').className = 'status success';
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('paymentId').value = 'dapp-demo-' + Date.now();
+            } else if (!beamPayReady) {
+                document.getElementById('status').innerHTML = '❌ BeamPay extension not found. Please install the extension.';
+                document.getElementById('status').className = 'status error';
+            }
+        }, 1000);
+
+        async function sendPayment() {
+            if (!window.beampay) {
+                showResult('❌ BeamPay not available', 'error');
+                return;
+            }
+
+            const chain = document.getElementById('chain').value;
+            const amount = document.getElementById('amount').value;
+            const to = document.getElementById('to').value;
+            const paymentId = document.getElementById('paymentId').value;
+
+            if (!amount || !to || !paymentId) {
+                showResult('❌ Please fill in all fields', 'error');
+                return;
+            }
+
+            showResult('⏳ Sending payment...', 'info');
+            document.getElementById('sendBtn').disabled = true;
+
+            try {
+                const result = await window.beampay.sendPayment({
+                    chain,
+                    amount,
+                    to,
+                    paymentId
+                });
+
+                if (result.popupOpened) {
+                    showResult(`✅ Payment popup opened!
+                    
+${result.message}
+Network: ${chain}
+Amount: ${amount} USDC
+Recipient: ${to}
+Payment ID: ${paymentId}
+
+Please confirm the transaction in the BeamPay popup.`, 'success');
+                } else {
+                    showResult(`✅ Payment successful!
+                    
+Transaction Hash: ${result.txHash}
+Network: ${result.network}
+Method: ${result.method}
+Amount: ${amount} USDC
+Recipient: ${to}
+Payment ID: ${paymentId}`, 'success');
+                }
+
+            } catch (error) {
+                showResult(`❌ Payment failed: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('sendBtn').disabled = false;
+            }
+        }
+
+        function checkBeamPay() {
+            if (window.beampay) {
+                const available = window.beampay.isAvailable();
+                showResult(`BeamPay Status: ${available ? '✅ Available' : '❌ Not Available'}`, available ? 'success' : 'error');
+            } else {
+                showResult('❌ BeamPay not found', 'error');
+            }
+        }
+
+        function getSupportedNetworks() {
+            if (window.beampay) {
+                const networks = window.beampay.getSupportedNetworks();
+                showResult(`Supported Networks: ${networks.join(', ')}`, 'info');
+            } else {
+                showResult('❌ BeamPay not found', 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+    </script>
+</body>
+</html> 

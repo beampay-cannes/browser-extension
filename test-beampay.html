@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeamPay Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>BeamPay Extension Test</h1>
+    
+    <div id="status" class="status info">
+        Checking BeamPay extension...
+    </div>
+    
+    <button onclick="checkBeamPay()">Check BeamPay</button>
+    <button onclick="testPayment()">Test Payment</button>
+    <button onclick="clearLog()">Clear Log</button>
+    
+    <div id="log"></div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${time}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function setStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function checkBeamPay() {
+            log('Checking BeamPay extension...');
+            
+            if (window.beampay) {
+                const available = window.beampay.isAvailable();
+                const networks = window.beampay.getSupportedNetworks();
+                
+                log(`✅ BeamPay found: ${available}`);
+                log(`📡 Supported networks: ${networks.join(', ')}`);
+                setStatus('✅ BeamPay extension detected and ready!', 'success');
+            } else {
+                log('❌ BeamPay not found');
+                setStatus('❌ BeamPay extension not found', 'error');
+            }
+        }
+
+        async function testPayment() {
+            if (!window.beampay) {
+                log('❌ BeamPay not available');
+                setStatus('❌ BeamPay extension not found', 'error');
+                return;
+            }
+
+            log('🚀 Testing payment...');
+            setStatus('⏳ Testing payment...', 'info');
+
+            try {
+                const result = await window.beampay.sendPayment({
+                    chain: 'ethereum',
+                    amount: '1',
+                    to: '0xD270c4804bcA681a5C915b18Ce86D0CD0e800CC7',
+                    paymentId: 'test-' + Date.now()
+                });
+
+                if (result.popupOpened) {
+                    log(`✅ Payment popup opened: ${JSON.stringify(result)}`);
+                    setStatus('✅ Payment popup opened! Check the BeamPay extension.', 'success');
+                } else {
+                    log(`✅ Payment successful: ${JSON.stringify(result)}`);
+                    setStatus('✅ Payment test successful!', 'success');
+                }
+            } catch (error) {
+                log(`❌ Payment failed: ${error.message}`);
+                setStatus('❌ Payment test failed', 'error');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // Listen for BeamPay ready event
+        window.addEventListener('beampay-ready', () => {
+            log('🌟 BeamPay ready event received!');
+            checkBeamPay();
+        });
+
+        // Initial check
+        setTimeout(() => {
+            checkBeamPay();
+        }, 1000);
+
+        // Log all console messages
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            log(`[Console] ${args.join(' ')}`);
+            originalConsoleLog.apply(console, args);
+        };
+    </script>
+</body>
+</html> 

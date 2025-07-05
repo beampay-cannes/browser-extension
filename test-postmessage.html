@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostMessage Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PostMessage Communication Test</h1>
+    
+    <button onclick="testPostMessage()">Test PostMessage</button>
+    <button onclick="testBeamPay()">Test BeamPay</button>
+    <button onclick="clearLog()">Clear Log</button>
+    
+    <div id="log" class="log"></div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${time}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function testPostMessage() {
+            log('Testing basic postMessage...');
+            
+            // Listen for response
+            const messageHandler = (event) => {
+                if (event.data.type === 'test-response') {
+                    log(`✅ Received response: ${JSON.stringify(event.data)}`);
+                    window.removeEventListener('message', messageHandler);
+                }
+            };
+            
+            window.addEventListener('message', messageHandler);
+            
+            // Send test message
+            window.postMessage({
+                type: 'test-message',
+                data: { hello: 'world' }
+            }, '*');
+            
+            // Simulate response (since we don't have content script responding to test messages)
+            setTimeout(() => {
+                window.postMessage({
+                    type: 'test-response',
+                    data: { received: true }
+                }, '*');
+            }, 100);
+        }
+
+        async function testBeamPay() {
+            log('Testing BeamPay...');
+            
+            if (!window.beampay) {
+                log('❌ BeamPay not available');
+                return;
+            }
+            
+            try {
+                const result = await window.beampay.sendPayment({
+                    chain: 'ethereum',
+                    amount: '1',
+                    to: '0xD270c4804bcA681a5C915b18Ce86D0CD0e800CC7',
+                    paymentId: 'test-' + Date.now()
+                });
+                
+                log(`✅ BeamPay result: ${JSON.stringify(result)}`);
+            } catch (error) {
+                log(`❌ BeamPay error: ${error.message}`);
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // Listen for BeamPay ready event
+        window.addEventListener('beampay-ready', () => {
+            log('🌟 BeamPay ready event received!');
+        });
+
+        // Listen for all postMessage events for debugging
+        window.addEventListener('message', (event) => {
+            if (event.source === window && event.data.type && event.data.type.startsWith('beampay-')) {
+                log(`📨 PostMessage: ${event.data.type} - ${JSON.stringify(event.data)}`);
+            }
+        });
+
+        // Check if BeamPay is ready
+        setTimeout(() => {
+            if (window.beampay) {
+                log('✅ BeamPay API detected');
+            } else {
+                log('❌ BeamPay API not found');
+            }
+        }, 1000);
+    </script>
+</body>
+</html> 

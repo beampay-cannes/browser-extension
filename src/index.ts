@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
-import { sendUSDC } from './usdc';
+import { sendUSDC, deriveAddressFromPrivateKey, checkEIP7702Delegation } from './usdc';
 import { validateAddress, validateAmount } from './utils';
 
 // Load environment variables
@@ -42,27 +42,33 @@ program
         throw new Error('Missing required environment variables: RPC_URL, PRIVATE_KEY, and DELEGATOR_ADDRESS');
       }
 
-      console.log(chalk.cyan(`RPC URL: ${rpcUrl}`));
-      console.log(chalk.cyan(`Delegator Address: ${delegatorAddress}`));
+      // Derive address from private key and check for EIP-7702 delegation
+      const derivedAddress = deriveAddressFromPrivateKey(privateKey);
+      console.log(chalk.cyan(`Derived Address from Private Key: ${derivedAddress}`));
 
-      if (options.dryRun) {
-        console.log(chalk.yellow('🧪 Dry run mode - no transaction will be sent'));
-        console.log(chalk.green('✅ All parameters validated successfully!'));
-        return;
+      // Check if the derived address has contract code (EIP-7702 delegation)
+      const delegationResult = await checkEIP7702Delegation(derivedAddress, options.network, rpcUrl);
+
+      if (delegationResult.isDelegated) {
+        console.log(chalk.magenta('🔗 EIP-7702 Delegation detected'));
+        console.log(chalk.magenta(`   Delegated to: ${delegationResult.delegationTarget}`));
+
+        // Check if delegation target matches DELEGATOR_ADDRESS from env
+        const delegationMatches = delegationResult.delegationTarget?.toLowerCase() === delegatorAddress.toLowerCase();
+        if (delegationMatches) {
+          console.log(chalk.green('✅ Delegation target matches DELEGATOR_ADDRESS from env'));
+        } else {
+          console.log(chalk.red('❌ Delegation target does NOT match DELEGATOR_ADDRESS from env'));
+          console.log(chalk.red(`   Expected: ${delegatorAddress}`));
+          console.log(chalk.red(`   Actual: ${delegationResult.delegationTarget}`));
+        }
+      } else if (delegationResult.code) {
+        console.log(chalk.yellow('📄 Regular Contract: Address has contract code (not EIP-7702)'));
+        console.log(chalk.red('❌ No EIP-7702 delegation found'));
+      } else {
+        console.log(chalk.blue('👤 Regular EOA: No contract code detected'));
+        console.log(chalk.red('❌ No EIP-7702 delegation found'));
       }
-
-      // Send USDC (simulated)
-      const txHash = await sendUSDC({
-        amount: validAmount,
-        recipient: validRecipient,
-        network: options.network,
-        rpcUrl,
-        privateKey,
-        delegatorAddress
-      });
-
-      console.log(chalk.green(`✅ Transaction simulated successfully!`));
-      console.log(chalk.green(`Mock transaction hash: ${txHash}`));
 
     } catch (error) {
       console.error(chalk.red('❌ Error:'), error instanceof Error ? error.message : error);

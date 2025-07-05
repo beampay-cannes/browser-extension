@@ -1,3 +1,25 @@
+import { createPublicClient, http, isAddress } from 'viem';
+import { privateKeyToAddress } from 'viem/accounts';
+import { mainnet, arbitrum, avalanche, base, celo, linea, optimism, polygon } from 'viem/chains';
+
+// Chain configurations
+const CHAIN_CONFIG = {
+  ethereum: mainnet,
+  mainnet: mainnet,
+  arbitrum: arbitrum,
+  avalanche: avalanche,
+  base: base,
+  celo: celo,
+  linea: linea,
+  optimism: optimism,
+  polygon: polygon,
+  // Note: unichain, worldchain, codex might not be available in viem/chains
+  // We'll use mainnet as fallback for now
+  unichain: mainnet,
+  worldchain: mainnet,
+  codex: mainnet,
+};
+
 // USDC contract addresses for different networks
 const USDC_ADDRESSES = {
   ethereum: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // Ethereum mainnet USDC
@@ -54,4 +76,67 @@ export function getUSDCAddress(network: string): string {
     throw new Error(`Unsupported network: ${network}`);
   }
   return usdcAddress;
+}
+
+/**
+ * Derive address from private key
+ */
+export function deriveAddressFromPrivateKey(privateKey: string): string {
+  const formattedKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+  return privateKeyToAddress(formattedKey as `0x${string}`);
+}
+
+/**
+ * Check if there's contract code at the address and get EIP-7702 delegation target
+ */
+export async function checkEIP7702Delegation(address: string, network: string, rpcUrl: string): Promise<{
+  isDelegated: boolean;
+  delegationTarget?: string;
+  code?: string;
+}> {
+  try {
+    const chain = CHAIN_CONFIG[network as keyof typeof CHAIN_CONFIG];
+    if (!chain) {
+      throw new Error(`Unsupported network: ${network}`);
+    }
+
+    const client = createPublicClient({
+      chain: chain,
+      transport: http(rpcUrl),
+    });
+
+    const code = await client.getCode({
+      address: address as `0x${string}`,
+    });
+
+    // If there's no code, it's a regular EOA
+    if (!code || code === '0x') {
+      return { isDelegated: false };
+    }
+
+
+
+    // Check if it's EIP-7702 delegation
+    // EIP-7702 code format: 0xef01 + 20-byte target address (total 22 bytes)
+    if (code.startsWith('0xef01')) {
+      // Extract the 20-byte address after 0xef01
+      // Skip the first 2 bytes (00) and take the next 20 bytes for the address
+      const addressHex = code.slice(8); // Skip '0xef0100' (6 chars)
+      const delegationTarget = '0x' + addressHex.slice(0, 40); // Take exactly 40 hex chars (20 bytes)
+      return {
+        isDelegated: true,
+        delegationTarget,
+        code
+      };
+    }
+
+    // Has code but not EIP-7702 format (regular contract)
+    return {
+      isDelegated: false,
+      code
+    };
+  } catch (error) {
+    console.error('Error checking EIP-7702 delegation:', error);
+    return { isDelegated: false };
+  }
 } 

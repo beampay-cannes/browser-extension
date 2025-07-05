@@ -2,6 +2,17 @@
 
 A TypeScript CLI tool for simulating USDC token transfers across different blockchain networks.
 
+## Features
+
+✅ **CLI Arguments**: Amount and recipient wallet address  
+✅ **Environment Variables**: RPC URL and private key from `.env` file  
+✅ **Multi-Network Support**: 11+ blockchain networks supported  
+✅ **EIP-7702 Delegation Check**: Detects if address has contract code (delegated account)  
+✅ **Address Derivation**: Shows address derived from private key  
+✅ **Input Validation**: Validates wallet addresses and amounts  
+✅ **Dry Run Mode**: Test parameters without sending transactions  
+✅ **Error Handling**: Comprehensive error messages for common issues
+
 ## Installation
 
 1. Install dependencies:
@@ -88,6 +99,19 @@ npm run dev <amount> <recipient_address>
 
 - `--network, -n`: Specify the network (ethereum, arbitrum, avalanche, base, celo, linea, optimism, polygon, unichain, worldchain) - defaults to ethereum
 - `--dry-run, -d`: Perform a dry run without sending the transaction
+
+### EIP-7702 Delegation Detection
+
+The CLI automatically checks if the address derived from your private key has contract code, which indicates EIP-7702 delegation:
+
+- **🔗 EIP-7702 Delegation detected**: The address has EIP-7702 delegation code
+  - Shows the target address it's delegated to
+  - Displays the full delegation code
+- **📄 Regular Contract**: Address has contract code but not EIP-7702 format
+  - Shows the first 50 characters of the contract code
+- **👤 Regular EOA**: No contract code detected (standard externally owned account)
+
+This helps identify if you're using a delegated account that follows the EIP-7702 standard and shows exactly where it's delegated to.
 
 ### Supported Networks
 

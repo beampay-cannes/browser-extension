@@ -1,15 +1,12 @@
-import { ethers } from 'ethers';
-
 /**
- * Validates if the given string is a valid Ethereum address
+ * Validates if the given string is a valid Ethereum address (basic format check)
  */
 export function validateAddress(address: string): string {
-  try {
-    const checksummedAddress = ethers.getAddress(address);
-    return checksummedAddress;
-  } catch (error) {
+  // Basic validation - check if it's a valid hex string of correct length
+  if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
     throw new Error(`Invalid wallet address: ${address}`);
   }
+  return address;
 }
 
 /**

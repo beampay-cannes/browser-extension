@@ -13,7 +13,7 @@ const program = new Command();
 
 program
   .name('delegator-cli')
-  .description('CLI tool for sending USDC tokens')
+  .description('CLI tool for simulating USDC token transfers')
   .version('1.0.0');
 
 program
@@ -33,11 +33,6 @@ program
       console.log(chalk.cyan(`Recipient: ${validRecipient}`));
       console.log(chalk.cyan(`Network: ${options.network}`));
 
-      if (options.dryRun) {
-        console.log(chalk.yellow('🧪 Dry run mode - no transaction will be sent'));
-        return;
-      }
-
       // Check environment variables
       const rpcUrl = process.env.RPC_URL;
       const privateKey = process.env.PRIVATE_KEY;
@@ -47,7 +42,16 @@ program
         throw new Error('Missing required environment variables: RPC_URL, PRIVATE_KEY, and DELEGATOR_ADDRESS');
       }
 
-      // Send USDC
+      console.log(chalk.cyan(`RPC URL: ${rpcUrl}`));
+      console.log(chalk.cyan(`Delegator Address: ${delegatorAddress}`));
+
+      if (options.dryRun) {
+        console.log(chalk.yellow('🧪 Dry run mode - no transaction will be sent'));
+        console.log(chalk.green('✅ All parameters validated successfully!'));
+        return;
+      }
+
+      // Send USDC (simulated)
       const txHash = await sendUSDC({
         amount: validAmount,
         recipient: validRecipient,
@@ -57,8 +61,8 @@ program
         delegatorAddress
       });
 
-      console.log(chalk.green(`✅ Transaction sent successfully!`));
-      console.log(chalk.green(`Transaction hash: ${txHash}`));
+      console.log(chalk.green(`✅ Transaction simulated successfully!`));
+      console.log(chalk.green(`Mock transaction hash: ${txHash}`));
 
     } catch (error) {
       console.error(chalk.red('❌ Error:'), error instanceof Error ? error.message : error);

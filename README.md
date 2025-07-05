@@ -1,6 +1,6 @@
 # Delegator CLI
 
-A TypeScript CLI tool for sending USDC tokens across different blockchain networks.
+A TypeScript CLI tool for simulating USDC token transfers across different blockchain networks.
 
 ## Installation
 
@@ -53,7 +53,7 @@ DELEGATOR_ADDRESS=0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c
 
 ### Basic Usage
 
-Send USDC to a recipient:
+Simulate USDC transfer to a recipient:
 ```bash
 npm run start <amount> <recipient_address>
 ```
@@ -61,19 +61,19 @@ npm run start <amount> <recipient_address>
 ### Examples
 
 ```bash
-# Send 100 USDC to an address on Ethereum
+# Simulate 100 USDC transfer to an address on Ethereum
 npm run start 100 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c
 
-# Send 50.5 USDC to an address on Polygon
+# Simulate 50.5 USDC transfer to an address on Polygon
 npm run start 50.5 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c --network polygon
 
-# Send 25 USDC to an address on Base
+# Simulate 25 USDC transfer to an address on Base
 npm run start 25 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c --network base
 
-# Send 10 USDC to an address on Arbitrum
+# Simulate 10 USDC transfer to an address on Arbitrum
 npm run start 10 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c --network arbitrum
 
-# Perform a dry run (no actual transaction)
+# Perform a dry run (validation only, no simulation)
 npm run start 25 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c --dry-run
 ```
 

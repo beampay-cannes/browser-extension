@@ -1,18 +1,39 @@
-# Delegator CLI
+# BeamPay - USDC Delegation CLI & Chrome Extension
 
-A TypeScript CLI tool for EIP-7702 delegation checking and calldata formation across different blockchain networks.
+A complete TypeScript toolkit for EIP-7702 delegation and USDC transactions, featuring both a powerful CLI tool and a beautiful Chrome extension interface.
 
 ## Features
 
 ✅ **CLI Arguments**: Amount, recipient wallet address, and payment ID (string)  
 ✅ **Environment Variables**: RPC URL, private key, delegator address, and eventor address from `.env` file  
-✅ **Multi-Network Support**: 11+ blockchain networks supported  
+✅ **Multi-Network Support**: Ethereum & Zircuit networks supported  
 ✅ **EIP-7702 Delegation Check**: Detects if address has contract code (delegated account)  
 ✅ **Delegation Validation**: Checks if delegation target matches DELEGATOR_ADDRESS from env  
 ✅ **Calldata Formation**: Creates array of (address, uint256, bytes) tuples with eventor commit and USDC transfer  
 ✅ **Address Derivation**: Shows address derived from private key  
 ✅ **Input Validation**: Validates wallet addresses, amounts, and payment ID strings  
 ✅ **Error Handling**: Comprehensive error messages for common issues
+
+## 🌟 Two Interfaces Available
+
+### 🖥️ CLI Tool
+Perfect for automation, scripting, and developer workflows:
+- Command-line interface for terminal users
+- Scriptable and automation-friendly
+- Detailed logging and debugging output
+
+### ⚡ Chrome Extension  
+Beautiful browser interface for easy payments:
+- Modern popup UI with real-time network information
+- Form persistence and input validation
+- One-click payments with dry-run testing
+- **[📖 See Chrome Extension Guide →](EXTENSION_README.md)**
+
+Quick setup:
+```bash
+npm run build-extension  # Build the extension
+# Then load dist/ folder in Chrome Developer Mode
+```
 
 ## Installation
 
@@ -79,14 +100,14 @@ npm run start <amount> <recipient_address> <payment_id>
 # Check delegation and create calldata for 100 USDC transfer on Ethereum
 npm run start 100 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "payment_12345"
 
-# Check delegation and create calldata for 50.5 USDC transfer on Polygon
-npm run start 50.5 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "invoice_abc123" --network polygon
+# Check delegation and create calldata for 50.5 USDC transfer on Zircuit
+npm run start 50.5 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "invoice_abc123" --network zircuit
 
-# Check delegation and create calldata for 25 USDC transfer on Base
-npm run start 25 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "order_xyz789" --network base
+# Check delegation and create calldata for 25 USDC transfer on Ethereum
+npm run start 25 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "order_xyz789" --network ethereum
 
-# Check delegation and create calldata for 10 USDC transfer on Arbitrum
-npm run start 10 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "transaction_456" --network arbitrum
+# Check delegation and create calldata for 10 USDC transfer on Zircuit
+npm run start 10 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "transaction_456" --network zircuit
 ```
 
 ### Development
@@ -98,7 +119,7 @@ npm run dev <amount> <recipient_address>
 
 ### Options
 
-- `--network, -n`: Specify the network (ethereum, arbitrum, avalanche, base, celo, linea, optimism, polygon, unichain, worldchain) - defaults to ethereum
+- `--network, -n`: Specify the network (ethereum, zircuit) - defaults to ethereum
 - `--dry-run, -d`: Perform a dry run without sending the transaction
 
 ### EIP-7702 Delegation Detection
@@ -116,17 +137,8 @@ This helps identify if you're using a delegated account that follows the EIP-770
 
 ### Supported Networks
 
-- **ethereum** (or **mainnet**): Ethereum mainnet
-- **arbitrum**: Arbitrum network
-- **avalanche**: Avalanche C-Chain
-- **base**: Base network
-- **celo**: Celo network
-- **codex**: Codex network
-- **linea**: Linea network
-- **optimism**: OP Mainnet
-- **polygon**: Polygon PoS
-- **unichain**: Unichain network
-- **worldchain**: World Chain network
+- **ethereum**: Ethereum mainnet with EIP-7702 delegation support
+- **zircuit**: Zircuit network with EIP-7702 delegation support
 
 ## Security Notes
 

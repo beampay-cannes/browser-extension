@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
-import { sendUSDC, deriveAddressFromPrivateKey, checkEIP7702Delegation, createCalldataArray, packCalldataArray, createExecuteCalldata, sendExecuteTransaction } from './usdc';
+import { sendUSDC, deriveAddressFromPrivateKey, checkEIP7702Delegation, createCalldataArray, packCalldataArray, createExecuteCalldata, sendExecuteTransaction, sendEIP7702Transaction } from './usdc';
 import { validateAddress, validateAmount, validatePaymentId } from './utils';
 
 // Load environment variables
@@ -95,11 +95,11 @@ program
       console.log(chalk.cyan('Execute Calldata:'));
       console.log(chalk.cyan(executeCalldata));
 
-      // Send transaction if there's a valid delegation
+      // Send transaction based on delegation status
       if (delegationResult.isDelegated) {
         const delegationMatches = delegationResult.delegationTarget?.toLowerCase() === delegatorAddress.toLowerCase();
         if (delegationMatches && !options.dryRun) {
-          console.log(chalk.blue('\n📡 Sending transaction...'));
+          console.log(chalk.blue('\n📡 Sending transaction (with existing delegation)...'));
           console.log(chalk.cyan(`From: ${derivedAddress}`));
           console.log(chalk.cyan(`To: ${derivedAddress} (self-transaction)`));
           console.log(chalk.cyan(`Value: 0`));
@@ -114,7 +114,22 @@ program
           console.log(chalk.red('\n❌ No transaction sent - delegation target does not match DELEGATOR_ADDRESS'));
         }
       } else {
-        console.log(chalk.red('\n❌ No transaction sent - no valid EIP-7702 delegation found'));
+        // No delegation found - send EIP-7702 transaction to create delegation
+        if (!options.dryRun) {
+          console.log(chalk.blue('\n📡 Sending EIP-7702 transaction (creating delegation)...'));
+          console.log(chalk.cyan(`From: ${derivedAddress}`));
+          console.log(chalk.cyan(`To: ${derivedAddress} (self-transaction)`));
+          console.log(chalk.cyan(`Value: 0`));
+          console.log(chalk.cyan(`Delegating to: ${delegatorAddress}`));
+          console.log(chalk.cyan(`Network: ${options.network}`));
+          console.log(chalk.cyan(`Transaction Type: 0x4 (EIP-7702)`));
+
+          const txHash = await sendEIP7702Transaction(privateKey, executeCalldata, delegatorAddress, options.network, rpcUrl);
+          console.log(chalk.green('✅ EIP-7702 transaction sent successfully!'));
+          console.log(chalk.green(`Transaction Hash: ${txHash}`));
+        } else {
+          console.log(chalk.yellow('\n🔍 Dry run mode - EIP-7702 transaction would be sent but skipped'));
+        }
       }
 
     } catch (error) {

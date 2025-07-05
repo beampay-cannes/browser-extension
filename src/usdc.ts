@@ -1,4 +1,4 @@
-import { createPublicClient, http, isAddress, encodeFunctionData, parseUnits, getAddress, encodeAbiParameters, createWalletClient } from 'viem';
+import { createPublicClient, http, isAddress, encodeFunctionData, parseUnits, getAddress, encodeAbiParameters, createWalletClient, keccak256, toHex } from 'viem';
 import { privateKeyToAddress, privateKeyToAccount } from 'viem/accounts';
 import { mainnet, arbitrum, avalanche, base, celo, linea, optimism, polygon } from 'viem/chains';
 
@@ -285,6 +285,201 @@ export async function sendExecuteTransaction(
     return txHash;
   } catch (error) {
     console.error('Error sending transaction:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create EIP-7702 authorization for delegation
+ * 
+ * @param nonce - For same-account transactions (sender == authorizer), use currentNonce + 1
+ *                For different-account transactions (sponsored), use currentNonce
+ */
+export async function createEIP7702Authorization(
+  privateKey: string,
+  delegatorAddress: string,
+  chainId: number,
+  nonce: number = 0
+): Promise<any> {
+  // Create account from private key for signing
+  const formattedKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+  const account = privateKeyToAccount(formattedKey as `0x${string}`);
+
+  // EIP-7702 authorization structure
+  const authorization = {
+    chainId: BigInt(chainId),
+    address: delegatorAddress as `0x${string}`,
+    nonce: BigInt(nonce)
+  };
+
+  // Create the authorization hash for signing according to EIP-7702
+  // The commitment format: keccak256(0x05 || rlp([chain_id, address, nonce]))
+  const MAGIC_BYTE = 0x05;
+
+  // Helper function to encode a number as minimal RLP
+  function encodeRlpNumber(num: bigint): Uint8Array {
+    if (num === 0n) return new Uint8Array([0x80]); // Empty string encoding for 0
+
+    // Convert to minimal hex (remove leading zeros)
+    let hex = num.toString(16);
+    if (hex.length % 2) hex = '0' + hex;
+
+    const bytes = new Uint8Array(Buffer.from(hex, 'hex'));
+
+    if (bytes.length === 1 && bytes[0] < 0x80) {
+      return bytes; // Single byte < 0x80 encodes as itself
+    } else if (bytes.length <= 55) {
+      const result = new Uint8Array(1 + bytes.length);
+      result[0] = 0x80 + bytes.length;
+      result.set(bytes, 1);
+      return result;
+    } else {
+      throw new Error('Number too large for simple RLP encoding');
+    }
+  }
+
+  // RLP encode the authorization tuple [chain_id, address, nonce]
+  const chainIdRlp = encodeRlpNumber(authorization.chainId);
+  const addressBytes = new Uint8Array(Buffer.from(authorization.address.slice(2), 'hex'));
+  const addressRlp = new Uint8Array(1 + addressBytes.length);
+  addressRlp[0] = 0x80 + addressBytes.length; // 0x94 for 20-byte address
+  addressRlp.set(addressBytes, 1);
+  const nonceRlp = encodeRlpNumber(authorization.nonce);
+
+  // Calculate total length and encode the list
+  const totalContentLength = chainIdRlp.length + addressRlp.length + nonceRlp.length;
+  const listHeader = totalContentLength <= 55 ?
+    new Uint8Array([0xc0 + totalContentLength]) :
+    (() => { throw new Error('List too long for simple RLP encoding'); })();
+
+  // Combine into full RLP-encoded list
+  const rlpEncoded = new Uint8Array(listHeader.length + totalContentLength);
+  let offset = 0;
+  rlpEncoded.set(listHeader, offset);
+  offset += listHeader.length;
+  rlpEncoded.set(chainIdRlp, offset);
+  offset += chainIdRlp.length;
+  rlpEncoded.set(addressRlp, offset);
+  offset += addressRlp.length;
+  rlpEncoded.set(nonceRlp, offset);
+
+  // Create the full message: 0x05 || rlp([chain_id, address, nonce])
+  const messageData = new Uint8Array(1 + rlpEncoded.length);
+  messageData[0] = MAGIC_BYTE;
+  messageData.set(rlpEncoded, 1);
+
+  const authorizationHash = keccak256(toHex(messageData));
+
+  // Sign the authorization hash directly (no message prefix for EIP-7702)
+  const signature = await account.sign({
+    hash: authorizationHash
+  });
+
+  // Parse signature into r, s, v components for EIP-7702
+  const r = signature.slice(0, 66);
+  const s = '0x' + signature.slice(66, 130);
+  const v = parseInt(signature.slice(130, 132), 16);
+
+  // Calculate yParity correctly for EIP-7702
+  let yParity;
+  if (v === 27) {
+    yParity = 0;
+  } else if (v === 28) {
+    yParity = 1;
+  } else {
+    // For EIP-155 transactions
+    yParity = v % 2;
+  }
+
+  return {
+    chainId: authorization.chainId,
+    address: authorization.address,
+    nonce: authorization.nonce,
+    yParity,
+    r,
+    s
+  };
+}
+
+/**
+ * Send EIP-7702 transaction with delegation and execute calldata
+ */
+export async function sendEIP7702Transaction(
+  privateKey: string,
+  executeCalldata: string,
+  delegatorAddress: string,
+  network: string,
+  rpcUrl: string
+): Promise<string> {
+  try {
+    const chain = CHAIN_CONFIG[network as keyof typeof CHAIN_CONFIG];
+    if (!chain) {
+      throw new Error(`Unsupported network: ${network}`);
+    }
+
+    // Create account from private key
+    const formattedKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+    const account = privateKeyToAccount(formattedKey as `0x${string}`);
+
+    // Create public client for reading data
+    const publicClient = createPublicClient({
+      chain,
+      transport: http(rpcUrl),
+    });
+
+    // Get current nonce for authorization
+    const accountNonce = await publicClient.getTransactionCount({
+      address: account.address,
+    });
+
+    // Create authorization for delegation with current nonce + 1 (for same-account transactions)
+    const authorization = await createEIP7702Authorization(
+      privateKey,
+      delegatorAddress,
+      chain.id,
+      Number(accountNonce) + 1
+    );
+
+    // Create wallet client
+    const walletClient = createWalletClient({
+      account,
+      chain,
+      transport: http(rpcUrl),
+    });
+
+    // Get gas price
+    const gasPrice = await publicClient.getGasPrice();
+
+    // Try to send EIP-7702 transaction with proper type
+    // Since viem might not fully support EIP-7702 yet, we need to be careful
+    try {
+      const txHash = await walletClient.sendTransaction({
+        to: account.address,
+        value: BigInt(0),
+        data: executeCalldata as `0x${string}`,
+        gas: BigInt(500000),
+        type: 'eip7702',
+        authorizationList: [authorization],
+      } as any);
+
+      return txHash;
+    } catch (error) {
+      console.log('EIP-7702 transaction failed, trying with custom type...');
+
+      // Fallback: try with custom transaction construction
+      const txHash = await walletClient.sendTransaction({
+        to: account.address,
+        value: BigInt(0),
+        data: executeCalldata as `0x${string}`,
+        gas: BigInt(500000),
+        type: '0x4' as any,
+        authorizationList: [authorization],
+      } as any);
+
+      return txHash;
+    }
+  } catch (error) {
+    console.error('Error sending EIP-7702 transaction:', error);
     throw error;
   }
 }

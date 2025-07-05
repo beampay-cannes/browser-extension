@@ -96,9 +96,12 @@ program
       console.log(chalk.cyan(executeCalldata));
 
       // Send transaction based on delegation status
-      if (delegationResult.isDelegated) {
-        const delegationMatches = delegationResult.delegationTarget?.toLowerCase() === delegatorAddress.toLowerCase();
-        if (delegationMatches && !options.dryRun) {
+      const delegationMatches = delegationResult.isDelegated &&
+        delegationResult.delegationTarget?.toLowerCase() === delegatorAddress.toLowerCase();
+
+      if (delegationMatches) {
+        // Delegation exists and matches - use existing delegation
+        if (!options.dryRun) {
           console.log(chalk.blue('\n📡 Sending transaction (with existing delegation)...'));
           console.log(chalk.cyan(`From: ${derivedAddress}`));
           console.log(chalk.cyan(`To: ${derivedAddress} (self-transaction)`));
@@ -108,15 +111,14 @@ program
           const txHash = await sendExecuteTransaction(privateKey, executeCalldata, options.network, rpcUrl);
           console.log(chalk.green('✅ Transaction sent successfully!'));
           console.log(chalk.green(`Transaction Hash: ${txHash}`));
-        } else if (delegationMatches && options.dryRun) {
-          console.log(chalk.yellow('\n🔍 Dry run mode - transaction would be sent but skipped'));
         } else {
-          console.log(chalk.red('\n❌ No transaction sent - delegation target does not match DELEGATOR_ADDRESS'));
+          console.log(chalk.yellow('\n🔍 Dry run mode - transaction would be sent but skipped'));
         }
       } else {
-        // No delegation found - send EIP-7702 transaction to create delegation
+        // No delegation or delegation mismatch - send EIP-7702 transaction to create/update delegation
         if (!options.dryRun) {
-          console.log(chalk.blue('\n📡 Sending EIP-7702 transaction (creating delegation)...'));
+          const actionText = delegationResult.isDelegated ? 'updating delegation' : 'creating delegation';
+          console.log(chalk.blue(`\n📡 Sending EIP-7702 transaction (${actionText})...`));
           console.log(chalk.cyan(`From: ${derivedAddress}`));
           console.log(chalk.cyan(`To: ${derivedAddress} (self-transaction)`));
           console.log(chalk.cyan(`Value: 0`));

@@ -17,16 +17,8 @@ A Chrome extension for sending USDC payments using EIP-7702 delegation and tradi
 | Network | Chain ID | EIP-7702 | USDC Address |
 |---------|----------|----------|--------------|
 | **Ethereum** | 1 | ✅ | 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 |
-| **World Chain** | 480 | ✅ | 0x79A02482A880bCE3F13e09Da970dC34db4CD24d1 |
 | **Zircuit** | 48900 | ✅ | 0x3b952c8C9C44e8Fe201e2b26F6B2200203214cfF |
-| Arbitrum | 42161 | ❌ | 0xaf88d065e77c8cC2239327C5EDb3A432268e5831 |
-| Avalanche | 43114 | ❌ | 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E |
-| Base | 8453 | ❌ | 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 |
-| Celo | 42220 | ❌ | 0xcebA9300f2b948710d2653dD7B07f33A8B32118C |
-| Linea | 59144 | ❌ | 0x176211869cA2b568f2A7D4EE941E073a821EE1ff |
-| Optimism | 10 | ❌ | 0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85 |
-| Polygon | 137 | ❌ | 0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359 |
-| Unichain | 1301 | ❌ | 0x078D782b760474a361dDA0AF3839290b0EF57AD6 |
+| **Flow** | 747 | ✅ | 0x7f27352D5F83Db87a5A3E00f4B07Cc2138D8ee52 |
 
 ## 🛠️ Installation
 
@@ -81,7 +73,7 @@ This will create the extension files in the `dist/` directory:
    - Click the ⚡ BeamPay icon in your Chrome toolbar
 
 2. **Select Network**:
-   - Choose from 11 supported networks
+   - Choose from 3 supported networks (Ethereum, Zircuit & Flow)
    - Network info shows: Chain ID, USDC address, EIP-7702 support
 
 3. **Enter Payment Details**:
@@ -95,7 +87,7 @@ This will create the extension files in the `dist/` directory:
 
 ### EIP-7702 Delegation
 
-For networks that support EIP-7702 (Ethereum, World Chain, Zircuit):
+For networks that support EIP-7702 (Ethereum, Zircuit & Flow):
 
 - ✅ **Automatic Detection**: Extension checks for existing delegations
 - ✅ **Smart Creation**: Creates new delegation if needed

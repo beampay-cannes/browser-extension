@@ -25,23 +25,23 @@ const zircuit = defineChain({
   },
 });
 
-const worldchain = defineChain({
-  id: 480,
-  name: 'World Chain',
+const flow = defineChain({
+  id: 747,
+  name: 'Flow',
   nativeCurrency: {
     decimals: 18,
-    name: 'Ether',
-    symbol: 'ETH',
+    name: 'Flow',
+    symbol: 'FLOW',
   },
   rpcUrls: {
     default: {
-      http: ['https://worldchain-mainnet.g.alchemy.com/public'],
+      http: ['https://mainnet.evm.nodes.onflow.org'],
     },
   },
   blockExplorers: {
     default: {
-      name: 'World Chain Explorer',
-      url: 'https://worldchain-mainnet.explorer.alchemy.com',
+      name: 'Flow Explorer',
+      url: 'https://evm.flowscan.io',
     },
   },
 });
@@ -50,6 +50,7 @@ const worldchain = defineChain({
 const CHAIN_CONFIG = {
   ethereum: mainnet,
   zircuit: zircuit,
+  flow: flow,
 };
 
 // ABI for the commit function
@@ -98,24 +99,28 @@ const ERC20_TRANSFER_ABI = [{
 const RPC_URLS = {
   ethereum: 'https://eth.llamarpc.com',
   zircuit: 'https://mainnet.zircuit.com',
+  flow: 'https://mainnet.evm.nodes.onflow.org',
 };
 
 // USDC contract addresses for different networks
 const USDC_ADDRESSES = {
   ethereum: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // Ethereum mainnet USDC
   zircuit: '0x3b952c8C9C44e8Fe201e2b26F6B2200203214cfF', // Zircuit USDC
+  flow: '0x7f27352D5F83Db87a5A3E00f4B07Cc2138D8ee52', // Flow USDC
 };
 
 // Delegator addresses for different networks (EIP-7702 delegation targets)
 const DELEGATOR_ADDRESSES = {
   ethereum: '0x4A23b165F2F07b6226097F7EA92E104C04734250',
   zircuit: '0x4A23b165F2F07b6226097F7EA92E104C04734250',
+  flow: '0x4A23b165F2F07b6226097F7EA92E104C04734250', // Flow delegator
 };
 
 // Eventor addresses for different networks (commit/reveal contract)
 const EVENTOR_ADDRESSES = {
   ethereum: '0x2BfC586A555bFd792b9a8b0936277b515CF45773',
   zircuit: '0x04fd13aED1B64639CCcCeeF1492741835ADCc15F',
+  flow: '0xEF96A222dEb97BeE8c7c6D24A64a7eb47C2d1186', // Flow eventor
 };
 
 export interface SendUSDCParams {

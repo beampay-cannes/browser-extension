@@ -6,7 +6,7 @@ A complete TypeScript toolkit for EIP-7702 delegation and USDC transactions, fea
 
 ✅ **CLI Arguments**: Amount, recipient wallet address, and payment ID (string)  
 ✅ **Environment Variables**: RPC URL, private key, delegator address, and eventor address from `.env` file  
-✅ **Multi-Network Support**: Ethereum & Zircuit networks supported  
+✅ **Multi-Network Support**: Ethereum, Zircuit & Flow networks supported  
 ✅ **EIP-7702 Delegation Check**: Detects if address has contract code (delegated account)  
 ✅ **Delegation Validation**: Checks if delegation target matches DELEGATOR_ADDRESS from env  
 ✅ **Calldata Formation**: Creates array of (address, uint256, bytes) tuples with eventor commit and USDC transfer  
@@ -103,8 +103,8 @@ npm run start 100 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "payment_12345"
 # Check delegation and create calldata for 50.5 USDC transfer on Zircuit
 npm run start 50.5 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "invoice_abc123" --network zircuit
 
-# Check delegation and create calldata for 25 USDC transfer on Ethereum
-npm run start 25 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "order_xyz789" --network ethereum
+# Check delegation and create calldata for 25 USDC transfer on Flow
+npm run start 25 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "order_xyz789" --network flow
 
 # Check delegation and create calldata for 10 USDC transfer on Zircuit
 npm run start 10 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "transaction_456" --network zircuit
@@ -119,7 +119,7 @@ npm run dev <amount> <recipient_address>
 
 ### Options
 
-- `--network, -n`: Specify the network (ethereum, zircuit) - defaults to ethereum
+- `--network, -n`: Specify the network (ethereum, zircuit, flow) - defaults to ethereum
 - `--dry-run, -d`: Perform a dry run without sending the transaction
 
 ### EIP-7702 Delegation Detection
@@ -139,6 +139,7 @@ This helps identify if you're using a delegated account that follows the EIP-770
 
 - **ethereum**: Ethereum mainnet with EIP-7702 delegation support
 - **zircuit**: Zircuit network with EIP-7702 delegation support
+- **flow**: Flow network with EIP-7702 delegation support
 
 ## Security Notes
 

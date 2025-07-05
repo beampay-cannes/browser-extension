@@ -140,7 +140,8 @@ async function handleTransaction(data: TransactionRequest['data']): Promise<Tran
 function getNetworkName(network: string): string {
   const networkNames: { [key: string]: string } = {
     ethereum: 'Ethereum',
-    zircuit: 'Zircuit'
+    zircuit: 'Zircuit',
+    flow: 'Flow'
   };
 
   return networkNames[network] || network;

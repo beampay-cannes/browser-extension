@@ -29,23 +29,48 @@ interface TransactionResponse {
   method?: string;
   networkName?: string;
   senderAddress?: string;
+  message?: string;
+  popupOpened?: boolean;
 }
 
-// Message listener for popup communication
+// Message listener for popup and dApp communication
 chrome.runtime.onMessage.addListener((
-  request: TransactionRequest,
+  request: TransactionRequest & { source?: string, action?: string },
   sender: chrome.runtime.MessageSender,
   sendResponse: (response: TransactionResponse) => void
 ) => {
   if (request.action === 'sendTransaction') {
+    // Log the source of the request
+    const source = request.source || 'popup';
+    console.log(`BeamPay: Transaction request from ${source}`);
+
     handleTransaction(request.data)
-      .then(result => sendResponse(result))
+      .then(result => {
+        console.log(`BeamPay: Transaction ${result.success ? 'successful' : 'failed'} from ${source}`);
+        sendResponse(result);
+      })
       .catch(error => sendResponse({
         success: false,
         error: error.message || 'Unknown error occurred'
       }));
 
     // Return true to indicate we'll send a response asynchronously
+    return true;
+  }
+
+  if (request.action === 'openPopupWithPayment') {
+    console.log('BeamPay: Opening popup with payment data:', request.data);
+
+    // Open the popup
+    chrome.action.openPopup()
+      .then(() => {
+        sendResponse({ success: true, message: 'Popup opened successfully' });
+      })
+      .catch(error => {
+        console.error('BeamPay: Failed to open popup:', error);
+        sendResponse({ success: false, error: 'Failed to open popup' });
+      });
+
     return true;
   }
 });

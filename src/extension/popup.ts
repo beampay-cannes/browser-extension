@@ -30,6 +30,27 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 
+function showDAppPaymentIndicator() {
+  const indicator = document.createElement('div');
+  indicator.className = 'dapp-indicator';
+  indicator.innerHTML = '🌐 dApp Payment Request';
+  indicator.style.cssText = `
+    background: #007bff;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+  `;
+
+  const form = document.getElementById('transactionForm');
+  if (form) {
+    form.insertBefore(indicator, form.firstChild);
+  }
+}
+
 function onNetworkChange() {
   const network = networkSelect.value;
   if (network) {
@@ -160,7 +181,29 @@ function saveValues() {
   chrome.storage.local.set({ formValues: values });
 }
 
-function loadSavedValues() {
+async function loadSavedValues() {
+  // Check for pending payment from dApp first
+  const pendingResult = await chrome.storage.local.get(['pendingPayment']);
+  if (pendingResult.pendingPayment) {
+    const { network, amount, recipient, paymentId, source } = pendingResult.pendingPayment;
+
+    // Pre-fill form with dApp payment data
+    networkSelect.value = network;
+    amountInput.value = amount;
+    recipientInput.value = recipient;
+    paymentIdInput.value = paymentId;
+
+    // Show dApp payment indicator
+    showDAppPaymentIndicator();
+
+    // Clear pending payment
+    await chrome.storage.local.remove(['pendingPayment']);
+
+    onNetworkChange();
+    return;
+  }
+
+  // Load regular saved form values
   chrome.storage.local.get(['formValues'], (result) => {
     if (result.formValues) {
       const values = result.formValues;

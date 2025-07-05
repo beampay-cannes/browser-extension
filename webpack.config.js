@@ -5,7 +5,9 @@ const Dotenv = require('dotenv-webpack');
 module.exports = {
   entry: {
     popup: './src/extension/popup.ts',
-    background: './src/extension/background.ts'
+    background: './src/extension/background.ts',
+    content: './src/extension/content.ts',
+    inject: './src/extension/inject.ts'
   },
   module: {
     rules: [

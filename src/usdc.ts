@@ -1,5 +1,5 @@
-import { createPublicClient, http, isAddress } from 'viem';
-import { privateKeyToAddress } from 'viem/accounts';
+import { createPublicClient, http, isAddress, encodeFunctionData, parseUnits, getAddress, encodeAbiParameters, createWalletClient } from 'viem';
+import { privateKeyToAddress, privateKeyToAccount } from 'viem/accounts';
 import { mainnet, arbitrum, avalanche, base, celo, linea, optimism, polygon } from 'viem/chains';
 
 // Chain configurations
@@ -19,6 +19,48 @@ const CHAIN_CONFIG = {
   worldchain: mainnet,
   codex: mainnet,
 };
+
+// ABI for the commit function
+const COMMIT_ABI = [{
+  name: 'commit',
+  type: 'function',
+  inputs: [
+    { name: '_to', type: 'address' },
+    { name: '_declaredAmount', type: 'uint256' },
+    { name: '_paymentId', type: 'string' }
+  ]
+}] as const;
+
+// ABI for the reveal function
+const REVEAL_ABI = [{
+  name: 'reveal',
+  type: 'function',
+  inputs: [
+    { name: '_to', type: 'address' },
+    { name: '_declaredAmount', type: 'uint256' },
+    { name: '_paymentId', type: 'string' }
+  ]
+}] as const;
+
+// ABI for the execute function
+const EXECUTE_ABI = [{
+  name: 'execute',
+  type: 'function',
+  inputs: [
+    { name: '', type: 'bytes32' },
+    { name: '', type: 'bytes' }
+  ]
+}] as const;
+
+// ERC20 ABI for transfer function
+const ERC20_TRANSFER_ABI = [{
+  name: 'transfer',
+  type: 'function',
+  inputs: [
+    { name: 'to', type: 'address' },
+    { name: 'amount', type: 'uint256' }
+  ]
+}] as const;
 
 // USDC contract addresses for different networks
 const USDC_ADDRESSES = {
@@ -76,6 +118,175 @@ export function getUSDCAddress(network: string): string {
     throw new Error(`Unsupported network: ${network}`);
   }
   return usdcAddress;
+}
+
+/**
+ * Create calldata for the commit function using viem serialization
+ */
+export function createEventorCalldata(to: string, usdcValue: string, paymentId: string): string {
+  // Convert USDC amount to uint256 (6 decimals)
+  const amountInWei = parseUnits(usdcValue, 6);
+
+  // Ensure proper address formatting with checksum
+  const checksummedTo = getAddress(to);
+
+  // Use viem to encode the function call
+  const calldata = encodeFunctionData({
+    abi: COMMIT_ABI,
+    functionName: 'commit',
+    args: [checksummedTo, amountInWei, paymentId]
+  });
+
+  return calldata;
+}
+
+/**
+ * Create calldata for ERC20 transfer function
+ */
+export function createUSDCTransferCalldata(to: string, usdcValue: string): string {
+  // Convert USDC amount to uint256 (6 decimals)
+  const amountInWei = parseUnits(usdcValue, 6);
+
+  // Ensure proper address formatting with checksum
+  const checksummedTo = getAddress(to);
+
+  // Use viem to encode the transfer function call
+  const calldata = encodeFunctionData({
+    abi: ERC20_TRANSFER_ABI,
+    functionName: 'transfer',
+    args: [checksummedTo, amountInWei]
+  });
+
+  return calldata;
+}
+
+/**
+ * Create calldata for the reveal function using viem serialization
+ */
+export function createEventorRevealCalldata(to: string, usdcValue: string, paymentId: string): string {
+  // Convert USDC amount to uint256 (6 decimals)
+  const amountInWei = parseUnits(usdcValue, 6);
+
+  // Ensure proper address formatting with checksum
+  const checksummedTo = getAddress(to);
+
+  // Use viem to encode the function call
+  const calldata = encodeFunctionData({
+    abi: REVEAL_ABI,
+    functionName: 'reveal',
+    args: [checksummedTo, amountInWei, paymentId]
+  });
+
+  return calldata;
+}
+
+/**
+ * Create the array of (address, uint256, bytes) tuples
+ * Creates all three items: eventor commit, USDC transfer, and eventor reveal
+ */
+export function createCalldataArray(eventorAddress: string, to: string, usdcValue: string, paymentId: string, network: string): Array<[string, string, string]> {
+  const firstCalldata = createEventorCalldata(to, usdcValue, paymentId);
+  const secondCalldata = createUSDCTransferCalldata(to, usdcValue);
+  const thirdCalldata = createEventorRevealCalldata(to, usdcValue, paymentId);
+
+  // Get USDC contract address for the network
+  const usdcAddress = USDC_ADDRESSES[network as keyof typeof USDC_ADDRESSES];
+  if (!usdcAddress) {
+    throw new Error(`Unsupported network: ${network}. Supported networks: ${Object.keys(USDC_ADDRESSES).join(', ')}`);
+  }
+
+  // Return array with:
+  // [0]: (eventor, 0, commit calldata)
+  // [1]: (usdc, 0, transfer calldata)
+  // [2]: (eventor, 0, reveal calldata)
+  return [
+    [eventorAddress, '0', firstCalldata],
+    [usdcAddress, '0', secondCalldata],
+    [eventorAddress, '0', thirdCalldata]
+  ];
+}
+
+/**
+ * Pack the calldata array into bytes
+ */
+export function packCalldataArray(calldataArray: Array<[string, string, string]>): string {
+  // Transform the array to proper types for encoding
+  const tuples = calldataArray.map(([address, value, data]) => ({
+    target: address as `0x${string}`,
+    value: BigInt(value),
+    data: data as `0x${string}`
+  }));
+
+  // Encode as (address,uint256,bytes)[]
+  const packedBytes = encodeAbiParameters(
+    [{
+      name: 'calls', type: 'tuple[]', components: [
+        { name: 'target', type: 'address' },
+        { name: 'value', type: 'uint256' },
+        { name: 'data', type: 'bytes' }
+      ]
+    }],
+    [tuples]
+  );
+
+  return packedBytes;
+}
+
+/**
+ * Create calldata for execute(bytes32,bytes) function
+ */
+export function createExecuteCalldata(packedBytes: string): string {
+  // Fixed bytes32 value
+  const fixedBytes32 = '0x0100000000000000000000000000000000000000000000000000000000000000';
+
+  // Create the execute calldata
+  const executeCalldata = encodeFunctionData({
+    abi: EXECUTE_ABI,
+    functionName: 'execute',
+    args: [fixedBytes32 as `0x${string}`, packedBytes as `0x${string}`]
+  });
+
+  return executeCalldata;
+}
+
+/**
+ * Send transaction with execute calldata (self-transaction with zero value)
+ */
+export async function sendExecuteTransaction(
+  privateKey: string,
+  executeCalldata: string,
+  network: string,
+  rpcUrl: string
+): Promise<string> {
+  try {
+    const chain = CHAIN_CONFIG[network as keyof typeof CHAIN_CONFIG];
+    if (!chain) {
+      throw new Error(`Unsupported network: ${network}`);
+    }
+
+    // Create account from private key (ensure proper formatting)
+    const formattedKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+    const account = privateKeyToAccount(formattedKey as `0x${string}`);
+
+    // Create wallet client
+    const walletClient = createWalletClient({
+      account,
+      chain,
+      transport: http(rpcUrl),
+    });
+
+    // Send transaction (self-transaction with zero value)
+    const txHash = await walletClient.sendTransaction({
+      to: account.address,
+      value: BigInt(0),
+      data: executeCalldata as `0x${string}`,
+    });
+
+    return txHash;
+  } catch (error) {
+    console.error('Error sending transaction:', error);
+    throw error;
+  }
 }
 
 /**

@@ -1,16 +1,17 @@
 # Delegator CLI
 
-A TypeScript CLI tool for simulating USDC token transfers across different blockchain networks.
+A TypeScript CLI tool for EIP-7702 delegation checking and calldata formation across different blockchain networks.
 
 ## Features
 
-✅ **CLI Arguments**: Amount and recipient wallet address  
-✅ **Environment Variables**: RPC URL and private key from `.env` file  
+✅ **CLI Arguments**: Amount, recipient wallet address, and payment ID (string)  
+✅ **Environment Variables**: RPC URL, private key, delegator address, and eventor address from `.env` file  
 ✅ **Multi-Network Support**: 11+ blockchain networks supported  
 ✅ **EIP-7702 Delegation Check**: Detects if address has contract code (delegated account)  
+✅ **Delegation Validation**: Checks if delegation target matches DELEGATOR_ADDRESS from env  
+✅ **Calldata Formation**: Creates array of (address, uint256, bytes) tuples with eventor commit and USDC transfer  
 ✅ **Address Derivation**: Shows address derived from private key  
-✅ **Input Validation**: Validates wallet addresses and amounts  
-✅ **Dry Run Mode**: Test parameters without sending transactions  
+✅ **Input Validation**: Validates wallet addresses, amounts, and payment ID strings  
 ✅ **Error Handling**: Comprehensive error messages for common issues
 
 ## Installation
@@ -53,6 +54,9 @@ RPC_URL=https://mainnet.infura.io/v3/YOUR_PROJECT_ID
 PRIVATE_KEY=0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
 
 DELEGATOR_ADDRESS=0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c
+
+# Address of the Eventor smart contract
+EVENTOR_ADDRESS=0x1234567890123456789012345678901234567890
 ```
 
 **Important:** 
@@ -66,26 +70,23 @@ DELEGATOR_ADDRESS=0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c
 
 Simulate USDC transfer to a recipient:
 ```bash
-npm run start <amount> <recipient_address>
+npm run start <amount> <recipient_address> <payment_id>
 ```
 
 ### Examples
 
 ```bash
-# Simulate 100 USDC transfer to an address on Ethereum
-npm run start 100 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c
+# Check delegation and create calldata for 100 USDC transfer on Ethereum
+npm run start 100 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "payment_12345"
 
-# Simulate 50.5 USDC transfer to an address on Polygon
-npm run start 50.5 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c --network polygon
+# Check delegation and create calldata for 50.5 USDC transfer on Polygon
+npm run start 50.5 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "invoice_abc123" --network polygon
 
-# Simulate 25 USDC transfer to an address on Base
-npm run start 25 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c --network base
+# Check delegation and create calldata for 25 USDC transfer on Base
+npm run start 25 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "order_xyz789" --network base
 
-# Simulate 10 USDC transfer to an address on Arbitrum
-npm run start 10 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c --network arbitrum
-
-# Perform a dry run (validation only, no simulation)
-npm run start 25 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c --dry-run
+# Check delegation and create calldata for 10 USDC transfer on Arbitrum
+npm run start 10 0x742d35Cc6634C0532925a3b8D489319dc1c5eA3c "transaction_456" --network arbitrum
 ```
 
 ### Development

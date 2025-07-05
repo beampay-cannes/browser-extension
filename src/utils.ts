@@ -64,4 +64,18 @@ export function validatePrivateKey(privateKey: string): string {
   }
 
   return formattedKey;
+}
+
+/**
+ * Validates if the payment ID is a valid string
+ */
+export function validatePaymentId(paymentId: string): string {
+  const trimmed = paymentId.trim();
+
+  if (trimmed.length === 0) {
+    throw new Error('Invalid payment ID: cannot be empty');
+  }
+
+  // Basic validation - just ensure it's a non-empty string
+  return trimmed;
 } 

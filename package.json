@@ -1,7 +1,7 @@
 {
   "name": "delegator-cli",
   "version": "1.0.0",
-  "description": "CLI tool for simulating USDC token transfers",
+  "description": "CLI tool for EIP-7702 delegation checking and calldata formation",
   "main": "dist/index.js",
   "bin": {
     "delegator-cli": "dist/index.js"

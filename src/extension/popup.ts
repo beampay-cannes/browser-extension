@@ -8,7 +8,7 @@ const networkInfo = document.getElementById('networkInfo') as HTMLDivElement;
 const amountInput = document.getElementById('amount') as HTMLInputElement;
 const recipientInput = document.getElementById('recipient') as HTMLInputElement;
 const paymentIdInput = document.getElementById('paymentId') as HTMLInputElement;
-const dryRunBtn = document.getElementById('dryRunBtn') as HTMLButtonElement;
+
 const sendBtn = document.getElementById('sendBtn') as HTMLButtonElement;
 const statusDiv = document.getElementById('status') as HTMLDivElement;
 
@@ -19,10 +19,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Event listeners
   networkSelect.addEventListener('change', onNetworkChange);
-  dryRunBtn.addEventListener('click', () => handleTransaction(true));
   form.addEventListener('submit', (e: Event) => {
     e.preventDefault();
-    handleTransaction(false);
+    handleTransaction();
   });
 
   // Auto-save form values
@@ -36,15 +35,17 @@ function onNetworkChange() {
   if (network) {
     try {
       const config = getNetworkConfig(network);
-      const eip7702Support = config.chainId === 1 || config.chainId === 480 || config.chainId === 48900;
 
       networkInfo.innerHTML = `
-        <div><strong>Chain ID:</strong> ${config.chainId}</div>
-        <div><strong>USDC:</strong> ${config.usdcAddress.substring(0, 10)}...${config.usdcAddress.substring(config.usdcAddress.length - 6)}</div>
-        <div><strong>EIP-7702:</strong> ${eip7702Support ?
-          '<span class="eip7702-badge eip7702-supported">✅ Supported</span>' :
-          '<span class="eip7702-badge eip7702-not-supported">❌ Not supported</span>'}</div>
-        <div><strong>Delegator:</strong> ${config.delegatorAddress.substring(0, 10)}...${config.delegatorAddress.substring(config.delegatorAddress.length - 6)}</div>
+        <div>
+          <strong>USDC:</strong> ${config.usdcAddress.substring(0, 10)}...${config.usdcAddress.substring(config.usdcAddress.length - 6)} <a href="#" class="copy-link" onclick="copyToClipboard('${config.usdcAddress}'); return false;">copy</a>
+        </div>
+        <div>
+          <strong>Delegator:</strong> ${config.delegatorAddress.substring(0, 10)}...${config.delegatorAddress.substring(config.delegatorAddress.length - 6)} <a href="#" class="copy-link" onclick="copyToClipboard('${config.delegatorAddress}'); return false;">copy</a>
+        </div>
+        <div>
+          <strong>Eventor:</strong> ${config.eventorAddress.substring(0, 10)}...${config.eventorAddress.substring(config.eventorAddress.length - 6)} <a href="#" class="copy-link" onclick="copyToClipboard('${config.eventorAddress}'); return false;">copy</a>
+        </div>
       `;
       networkInfo.classList.remove('hidden');
     } catch (error) {
@@ -106,17 +107,16 @@ function hideStatus() {
 }
 
 function setButtonsEnabled(enabled: boolean) {
-  dryRunBtn.disabled = !enabled;
   sendBtn.disabled = !enabled;
 }
 
-async function handleTransaction(isDryRun: boolean) {
+async function handleTransaction() {
   try {
     // Validate form
     const { network, amount, recipient, paymentId } = validateForm();
 
     // Show loading status
-    showStatus(`${isDryRun ? 'Preparing dry run' : 'Sending payment'}...`, 'loading');
+    showStatus('Sending payment...', 'loading');
     setButtonsEnabled(false);
 
     // Send message to background script
@@ -127,31 +127,18 @@ async function handleTransaction(isDryRun: boolean) {
         amount,
         recipient,
         paymentId,
-        isDryRun
+        isDryRun: false
       }
     });
 
     if (response.success) {
-      let message = '';
-      if (isDryRun) {
-        message = `
-          ✅ Dry run successful!<br>
-          <strong>Network:</strong> ${response.networkName}<br>
-          <strong>Amount:</strong> ${amount} USDC<br>
-          <strong>Recipient:</strong> ${recipient}<br>
-          <strong>Payment ID:</strong> ${paymentId}<br>
-          <strong>Method:</strong> ${response.method}<br>
-          <strong>Address:</strong> ${response.senderAddress}
-        `;
-      } else {
-        message = `
-          ✅ Payment sent successfully!<br>
-          <strong>Transaction Hash:</strong>
-          <div class="tx-hash">${response.txHash}</div>
-          <strong>Network:</strong> ${response.networkName}<br>
-          <strong>Method:</strong> ${response.method}
-        `;
-      }
+      const message = `
+        ✅ Payment sent successfully!<br>
+        <strong>Transaction Hash:</strong>
+        <div class="tx-hash">${response.txHash}</div>
+        <strong>Network:</strong> ${response.networkName}<br>
+        <strong>Method:</strong> ${response.method}
+      `;
       showStatus(message, 'success');
     } else {
       showStatus(`❌ Error: ${response.error}`, 'error');
@@ -186,4 +173,19 @@ function loadSavedValues() {
       if (values.paymentId) paymentIdInput.value = values.paymentId;
     }
   });
-} 
+}
+
+// Global function for copying to clipboard
+(window as any).copyToClipboard = async function (text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+  }
+}; 

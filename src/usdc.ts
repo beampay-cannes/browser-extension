@@ -1,6 +1,6 @@
 import { createPublicClient, http, isAddress, encodeFunctionData, parseUnits, getAddress, encodeAbiParameters, createWalletClient, keccak256, toHex } from 'viem';
 import { privateKeyToAddress, privateKeyToAccount } from 'viem/accounts';
-import { mainnet, arbitrum, avalanche, base, celo, linea, optimism, polygon } from 'viem/chains';
+import { mainnet } from 'viem/chains';
 import { defineChain } from 'viem';
 
 // Define custom chains not available in viem/chains
@@ -49,19 +49,6 @@ const worldchain = defineChain({
 // Chain configurations
 const CHAIN_CONFIG = {
   ethereum: mainnet,
-  mainnet: mainnet,
-  arbitrum: arbitrum,
-  avalanche: avalanche,
-  base: base,
-  celo: celo,
-  linea: linea,
-  optimism: optimism,
-  polygon: polygon,
-  // Note: unichain, codex might not be available in viem/chains
-  // We'll use mainnet as fallback for now
-  unichain: mainnet,
-  worldchain: worldchain,
-  codex: mainnet,
   zircuit: zircuit,
 };
 
@@ -110,68 +97,24 @@ const ERC20_TRANSFER_ABI = [{
 // RPC URLs for different networks
 const RPC_URLS = {
   ethereum: 'https://eth.llamarpc.com',
-  mainnet: 'https://eth.llamarpc.com', // Ethereum mainnet alias
-  arbitrum: 'https://arb1.arbitrum.io/rpc',
-  avalanche: 'https://api.avax.network/ext/bc/C/rpc',
-  base: 'https://mainnet.base.org',
-  codex: 'https://rpc.codex.technology',
-  celo: 'https://forno.celo.org',
-  linea: 'https://rpc.linea.build',
-  optimism: 'https://mainnet.optimism.io',
-  polygon: 'https://polygon-rpc.com',
-  unichain: 'https://rpc.unichain.org',
-  worldchain: 'https://worldchain-mainnet.g.alchemy.com/public',
   zircuit: 'https://mainnet.zircuit.com',
 };
 
 // USDC contract addresses for different networks
 const USDC_ADDRESSES = {
   ethereum: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // Ethereum mainnet USDC
-  mainnet: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // Ethereum mainnet USDC (alias)
-  arbitrum: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // Arbitrum USDC
-  avalanche: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E', // Avalanche C-Chain USDC
-  base: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Base USDC
-  codex: '0xd996633a415985DBd7D6D12f4A4343E31f5037cf', // Codex USDC
-  celo: '0xcebA9300f2b948710d2653dD7B07f33A8B32118C', // Celo USDC
-  linea: '0x176211869cA2b568f2A7D4EE941E073a821EE1ff', // Linea USDC
-  optimism: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', // OP Mainnet USDC
-  polygon: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // Polygon PoS USDC
-  unichain: '0x078D782b760474a361dDA0AF3839290b0EF57AD6', // Unichain USDC
-  worldchain: '0x79A02482A880bCE3F13e09Da970dC34db4CD24d1', // World Chain USDC
   zircuit: '0x3b952c8C9C44e8Fe201e2b26F6B2200203214cfF', // Zircuit USDC
 };
 
 // Delegator addresses for different networks (EIP-7702 delegation targets)
 const DELEGATOR_ADDRESSES = {
-  ethereum: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
-  mainnet: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496', // Ethereum mainnet alias
-  arbitrum: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
-  avalanche: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
-  base: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
-  codex: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
-  celo: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
-  linea: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
-  optimism: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
-  polygon: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
-  unichain: '0xEAF663a2AEd3c9D73f5c484471C5F658A2Fb1496',
-  worldchain: '0x3CAFF4B47aBA17E9576aD928Fa8f978ad9777269',
-  zircuit: '0x3CAFF4B47aBA17E9576aD928Fa8f978ad9777269',
+  ethereum: '0x4A23b165F2F07b6226097F7EA92E104C04734250',
+  zircuit: '0x4A23b165F2F07b6226097F7EA92E104C04734250',
 };
 
 // Eventor addresses for different networks (commit/reveal contract)
 const EVENTOR_ADDRESSES = {
   ethereum: '0x2BfC586A555bFd792b9a8b0936277b515CF45773',
-  mainnet: '0x2BfC586A555bFd792b9a8b0936277b515CF45773', // Ethereum mainnet alias
-  arbitrum: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
-  avalanche: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
-  base: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
-  codex: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
-  celo: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
-  linea: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
-  optimism: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
-  polygon: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
-  unichain: '0x171EAbC5712370d08338651AE3419AB7d179Dd42',
-  worldchain: '0x04fd13aED1B64639CCcCeeF1492741835ADCc15F',
   zircuit: '0x04fd13aED1B64639CCcCeeF1492741835ADCc15F',
 };
 
@@ -246,12 +189,17 @@ export function getNetworkConfig(network: string): {
   usdcAddress: string;
   delegatorAddress: string;
   eventorAddress: string;
+  chainId: number;
 } {
+  const chain = CHAIN_CONFIG[network as keyof typeof CHAIN_CONFIG];
+  const chainId = chain ? chain.id : 1; // Default to Ethereum mainnet
+
   return {
     rpcUrl: getRpcUrl(network),
     usdcAddress: getUSDCAddress(network),
     delegatorAddress: getDelegatorAddress(network),
     eventorAddress: getEventorAddress(network),
+    chainId,
   };
 }
 
@@ -451,6 +399,15 @@ export async function createEIP7702Authorization(
   // The commitment format: keccak256(0x05 || rlp([chain_id, address, nonce]))
   const MAGIC_BYTE = 0x05;
 
+  // Helper function to convert hex string to Uint8Array (browser-compatible)
+  function hexToUint8Array(hex: string): Uint8Array {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+    }
+    return bytes;
+  }
+
   // Helper function to encode a number as minimal RLP
   function encodeRlpNumber(num: bigint): Uint8Array {
     if (num === 0n) return new Uint8Array([0x80]); // Empty string encoding for 0
@@ -459,7 +416,7 @@ export async function createEIP7702Authorization(
     let hex = num.toString(16);
     if (hex.length % 2) hex = '0' + hex;
 
-    const bytes = new Uint8Array(Buffer.from(hex, 'hex'));
+    const bytes = hexToUint8Array(hex);
 
     if (bytes.length === 1 && bytes[0] < 0x80) {
       return bytes; // Single byte < 0x80 encodes as itself
@@ -475,7 +432,7 @@ export async function createEIP7702Authorization(
 
   // RLP encode the authorization tuple [chain_id, address, nonce]
   const chainIdRlp = encodeRlpNumber(authorization.chainId);
-  const addressBytes = new Uint8Array(Buffer.from(authorization.address.slice(2), 'hex'));
+  const addressBytes = hexToUint8Array(authorization.address.slice(2));
   const addressRlp = new Uint8Array(1 + addressBytes.length);
   addressRlp[0] = 0x80 + addressBytes.length; // 0x94 for 20-byte address
   addressRlp.set(addressBytes, 1);
@@ -659,5 +616,79 @@ export async function checkEIP7702Delegation(address: string, network: string, r
   } catch (error) {
     console.error('Error checking EIP-7702 delegation:', error);
     return { isDelegated: false };
+  }
+}
+
+// Extension-specific interface and function
+export interface SendUSDCTransactionParams {
+  amount: string;
+  recipient: string;
+  paymentId: string;
+  network: string;
+  dryRun?: boolean;
+}
+
+export async function sendUSDCTransaction(params: SendUSDCTransactionParams): Promise<string> {
+  const { amount, recipient, paymentId, network, dryRun = false } = params;
+
+  // Get environment variables
+  const privateKey = process.env.PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error('PRIVATE_KEY environment variable is not set');
+  }
+
+  // Get network configuration
+  const networkConfig = getNetworkConfig(network);
+
+  // Create calldata for the transaction
+  const calldataArray = createCalldataArray(
+    networkConfig.eventorAddress,
+    recipient,
+    amount,
+    paymentId,
+    network
+  );
+
+  // Pack the calldata array
+  const packedBytes = packCalldataArray(calldataArray);
+
+  // Create execute calldata
+  const executeCalldata = createExecuteCalldata(packedBytes);
+
+  if (dryRun) {
+    console.log('Dry run - transaction would be sent with:', {
+      network,
+      amount,
+      recipient,
+      paymentId,
+      calldataArray,
+      executeCalldata
+    });
+    return 'dry-run-tx-hash';
+  }
+
+  // Check for existing delegation
+  const senderAddress = deriveAddressFromPrivateKey(privateKey);
+  const delegationCheck = await checkEIP7702Delegation(senderAddress, network, networkConfig.rpcUrl);
+
+  if (delegationCheck.isDelegated && delegationCheck.delegationTarget === networkConfig.delegatorAddress) {
+    // Use existing delegation
+    console.log('✅ Using existing EIP-7702 delegation');
+    return await sendExecuteTransaction(
+      privateKey,
+      executeCalldata,
+      network,
+      networkConfig.rpcUrl
+    );
+  } else {
+    // Create new EIP-7702 delegation
+    console.log('🔄 Creating new EIP-7702 delegation');
+    return await sendEIP7702Transaction(
+      privateKey,
+      executeCalldata,
+      networkConfig.delegatorAddress,
+      network,
+      networkConfig.rpcUrl
+    );
   }
 } 
